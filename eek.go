@@ -113,8 +113,8 @@ func (e *Eek) DefineFunction(fun Func) {
 	e.functions = append(e.functions, fun)
 }
 
-// PrepareEvalutation prepare the layout of evaluation string
-func (e *Eek) PrepareEvalutation(operation string) {
+// PrepareEvaluation prepare the layout of evaluation string
+func (e *Eek) PrepareEvaluation(operation string) {
 	e.evaluationType = eekTypeSimple
 	e.operation = strings.TrimSpace(operation)
 }

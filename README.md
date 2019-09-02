@@ -22,7 +22,7 @@ obj.DefineVariable(Var{Name: "VarA", Type: "int"})
 obj.DefineVariable(Var{Name: "VarB", Type: "float64", DefaultValue: 10.5})
 
 // specify the evaluation expression in go standard syntax
-obj.PrepareEvalutation(`
+obj.PrepareEvaluation(`
     VarACasted := float64(VarA)
     VarC := VarACasted + VarB
     return VarC
@@ -54,7 +54,7 @@ obj.DefineVariable(eek.Var{Name: "MessageLose", Type: "string", DefaultValue: "Y
 obj.DefineVariable(eek.Var{Name: "YourLotteryCode", Type: "int"})
 obj.DefineVariable(eek.Var{Name: "RepeatUntil", Type: "int", DefaultValue: 5})
 
-obj.PrepareEvalutation(`
+obj.PrepareEvaluation(`
     generateRandomNumber := func() int {
         return gubrak.RandomInt(0, 10)
     }
@@ -112,7 +112,7 @@ obj.DefineFunction(eek.Func{
     Name:         "NOT",
     BodyFunction: `func(cond bool) bool { return !cond }`,
 })
-obj.PrepareEvalutation(`
+obj.PrepareEvaluation(`
     result := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
     
     return result

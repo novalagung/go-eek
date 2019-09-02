@@ -14,7 +14,7 @@ func TestEval(t *testing.T) {
 		obj.DefineVariable(Var{Name: "A", Type: "int"})
 		obj.DefineVariable(Var{Name: "B", Type: "float64", DefaultValue: 10.5})
 
-		obj.PrepareEvalutation(`
+		obj.PrepareEvaluation(`
 			ACasted := float64(A)
 			C := ACasted + B
 			return C
@@ -69,7 +69,7 @@ func TestComplexEval(t *testing.T) {
 		obj.DefineVariable(Var{Name: "YourLotteryCode", Type: "int"})
 		obj.DefineVariable(Var{Name: "RepeatUntil", Type: "int", DefaultValue: 5})
 
-		obj.PrepareEvalutation(`
+		obj.PrepareEvaluation(`
 			generateRandomNumber := func() int {
 				return gubrak.RandomInt(0, 10)
 			}
@@ -138,7 +138,7 @@ func TestMathematicExpression(t *testing.T) {
 			Name:         "NOT",
 			BodyFunction: `func(cond bool) bool { return !cond }`,
 		})
-		obj.PrepareEvalutation(`
+		obj.PrepareEvaluation(`
 			result := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
 			
 			return result
