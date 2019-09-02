@@ -6,7 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSpec(t *testing.T) {
+func TestEval(t *testing.T) {
 	Convey("Create Eek object with simple evaluation", t, func() {
 		obj := New()
 		obj.SetName("simple operation")
@@ -56,7 +56,7 @@ func TestSpec(t *testing.T) {
 	})
 }
 
-func TestSpec(t *testing.T) {
+func TestComplexEval(t *testing.T) {
 	Convey("Create Eek object with simple evaluation", t, func() {
 		obj := New()
 		obj.SetName("evaluation with 3rd party library")
