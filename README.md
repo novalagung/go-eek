@@ -11,7 +11,7 @@ go-eek accept standar Go syntax expression.
 #### Simple Example
 
 ```go
-import "github.com/novalagung/go-eek"
+import . "github.com/novalagung/go-eek"
 
 // create new eek object and name it
 obj := NewEek()
