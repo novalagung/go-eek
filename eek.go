@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"plugin"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strings"
@@ -225,19 +226,27 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 			return nil, err
 		}
 
-		// *v.(*int) = 7
-		// f.(func())() // prints "Hello, number 7"
+		(func() {
+			defer func() {
+				if recovered := recover(); recovered != nil {
+					recoveredInString := fmt.Sprintf("%v", recovered)
+					recoveredInString = strings.Replace(recoveredInString, "reflect.Set: value of type ", "", -1)
+					recoveredInString = strings.Replace(recoveredInString, "is not assignable to type ", "", -1)
 
-		// fmt.Printf("-------- %#v \n", lookedUpVar)
+					if parts := strings.Split(recoveredInString, " "); len(parts) == 2 {
+						err = fmt.Errorf("Error on setting value of variable %s (type %s) with value %v (type %s)", varName, parts[0], varValue, parts[1])
+					} else {
+						err = fmt.Errorf("%v", recoveredInString)
+					}
+				}
+			}()
 
-		_ = lookedUpVar
-		_ = varValue
-
-		// v := reflect.ValueOf(lookedUpVar).Elem()
-
-		// fmt.Printf("====== %#v \n", reflect.ValueOf(lookedUpVar).Elem())
-		// fmt.Printf("====== %#v \n", reflect.ValueOf(&varValue))
-		// v.Set(reflect.ValueOf(&varValue).Elem())
+			// reflect.Set: value of type int is not assignable to type float64
+			reflect.ValueOf(lookedUpVar).Elem().Set(reflect.ValueOf(varValue))
+		})()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	lookedUpEvaluate, err := p.Lookup("Evaluate")

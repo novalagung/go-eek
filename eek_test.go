@@ -35,8 +35,8 @@ func TestSpec(t *testing.T) {
 				fmt.Println("======", output)
 
 				output, err = obj.Evaluate(ExecVar{
-					"A": 12,
-					"B": 12.5,
+					"A": 1,
+					"B": 2,
 				})
 				So(err, ShouldBeNil)
 				fmt.Println("======", output)
