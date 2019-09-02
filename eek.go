@@ -42,8 +42,8 @@ type Var struct {
 // ExecVar is used on defining value in the evaluation
 type ExecVar map[string]interface{}
 
-// NewEek used to create eek object. This function accept an optional variable that will be used as the evaluation name
-func NewEek(args ...string) *Eek {
+// New used to create eek object. This function accept an optional variable that will be used as the evaluation name
+func New(args ...string) *Eek {
 	eek := new(Eek)
 
 	if len(args) > 0 {

@@ -1,7 +1,6 @@
 package eek
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -9,7 +8,7 @@ import (
 
 func TestSpec(t *testing.T) {
 	Convey("Create Eek object with simple evaluation", t, func() {
-		obj := NewEek()
+		obj := New()
 		obj.SetName("simple operation")
 
 		obj.DefineVariable(Var{Name: "A", Type: "int"})
@@ -25,21 +24,33 @@ func TestSpec(t *testing.T) {
 			err := obj.Build()
 			So(err, ShouldBeNil)
 
-			Convey("Test exec", func() {
+			Convey("Test exec 1", func() {
 				var output interface{}
 
 				output, err = obj.Evaluate(ExecVar{
 					"A": 9,
 				})
 				So(err, ShouldBeNil)
-				fmt.Println("======", output)
+				So(output.(float64), ShouldEqual, 19.5)
+			})
+
+			Convey("Test exec 2", func() {
+				var output interface{}
 
 				output, err = obj.Evaluate(ExecVar{
 					"A": 1,
-					"B": 2,
+					"B": 2.1,
 				})
 				So(err, ShouldBeNil)
-				fmt.Println("======", output)
+				So(output.(float64), ShouldEqual, 3.1)
+			})
+
+			Convey("Test exec error", func() {
+				_, err = obj.Evaluate(ExecVar{
+					"B": 2,
+				})
+				So(err, ShouldBeError)
+				So(err.Error(), ShouldEqual, "Error on setting value of variable B (type int) with value 2 (type float64)")
 			})
 		})
 	})
