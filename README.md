@@ -1,6 +1,6 @@
 # go-eek
 
-Blazingly fast and secure go evaluation library, created on top of [Go `pkg/plugin` package](https://golang.org/pkg/plugin/).
+Blazingly fast and safe go evaluation library, created on top of [Go `pkg/plugin` package](https://golang.org/pkg/plugin/).
 
 On go-eek, the eval expression is encapsulated into a single function, and stored in a go file. The go file later on will be build into a plugin file (`*.so` file). And then next, for every evaluation call, it will happen in the plugin file. This is why go-eek is insanely fast.
 
