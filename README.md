@@ -2,11 +2,13 @@
 
 Blazingly fast and secure go evaluation library, created on top of [Go plugin API](https://golang.org/pkg/plugin/).
 
-On go-eek, evaluation expression is encapsulated into single function, stored in a go file, and then the particular file will be build into a plugin file (*.so file). Next, for every evaluation call, it will happen by consuming the plugin file. This is why go-eek is insanely fast.
+On go-eek, evaluation expression is encapsulated into single function, stored in a go file, and then the particular file will be build into a plugin file (`*.so` file). Next, for every evaluation call, it will happen by consuming the plugin file. This is why go-eek is insanely fast.
 
 go-eek accept standar Go expression.
 
 ## Example
+
+#### Simple Example
 
 ```go
 import "github.com/novalagung/go-eek"
@@ -37,6 +39,60 @@ output1, _ := obj.Evaluate(ExecVar{ "A": 9 })
 fmt.Println("with A = 9, the result will be", output1)
 output2, _ := obj.Evaluate(ExecVar{ "A": 12, "B": 12.4 })
 fmt.Println("with A = 12 and B = 12.4, the result will be", output2)
+```
+
+#### More Complex Example
+
+```go
+obj := eek.New()
+obj.SetName("evaluation with 3rd party library")
+
+obj.ImportPackage("fmt")
+obj.ImportPackage("github.com/novalagung/gubrak")
+
+obj.DefineVariable(eek.Var{Name: "MessageWin", Type: "string", DefaultValue: "Congrats! You win the lottery!"})
+obj.DefineVariable(eek.Var{Name: "MessageLose", Type: "string", DefaultValue: "You lose"})
+obj.DefineVariable(eek.Var{Name: "YourLotteryCode", Type: "int"})
+obj.DefineVariable(eek.Var{Name: "RepeatUntil", Type: "int", DefaultValue: 5})
+
+obj.PrepareEvalutation(`
+    generateRandomNumber := func() int {
+        return gubrak.RandomInt(0, 10)
+    }
+
+    i := 0
+    for i < RepeatUntil {
+        if generateRandomNumber() == YourLotteryCode {
+            return fmt.Sprintf("%s after %d tried", MessageWin, i + 1)
+        }
+
+        i++
+    }
+    
+    return MessageLose
+`)
+
+err := obj.Build()
+if err != nil {
+    log.Fatal(err)
+}
+
+output, err := obj.Evaluate(eek.ExecVar{
+    "YourLotteryCode": 5,
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("output:", output)
+
+output, err = obj.Evaluate(eek.ExecVar{
+    "YourLotteryCode": 3,
+    "RepeatUntil":     10,
+})
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("output:", output)
 ```
 
 More example available on the `*_test.go` file.

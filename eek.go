@@ -22,14 +22,15 @@ const (
 
 // Eek is main type used on the evaluation
 type Eek struct {
-	name           string
-	variables      map[string]Var
-	packages       map[string]bool
-	evaluationType eekType
-	operation      string
-	baseBuildPath  string
-	buildPath      string
-	buildFilePath  string
+	name              string
+	variables         map[string]Var
+	packages          map[string]bool
+	evaluationType    eekType
+	operation         string
+	baseBuildPath     string
+	buildPath         string
+	buildFilePath     string
+	isBuildOnTempPath bool
 }
 
 // Var is reflect to a single typed variable with/without a default value
@@ -54,9 +55,29 @@ func New(args ...string) *Eek {
 	eek.packages = make(map[string]bool)
 	eek.evaluationType = eekTypeSimple
 
-	eek.SetBaseBuildPath("./plugins/")
+	eek.setDefaultBaseBuildPath()
 
 	return eek
+}
+
+func (e *Eek) setDefaultBaseBuildPath() {
+	basePath := ""
+	switch runtime.GOOS {
+	case "darwin", "freebsd", "linux":
+		basePath = os.Getenv("TMPDIR")
+	case "windows":
+		basePath = os.Getenv("TEMP")
+	default:
+	}
+
+	if basePath == "" {
+		basePath = "./"
+	} else {
+		isBuildOnTempPath = true // for later purpose
+	}
+
+	defaultBaseBuildPath := filepath.Join(basePath, "go-eek-plugins")
+	e.SetBaseBuildPath(defaultBaseBuildPath)
 }
 
 // SetName set the evaluation name
@@ -64,7 +85,7 @@ func (e *Eek) SetName(name string) {
 	e.name = name
 }
 
-// SetBaseBuildPath set the build path
+// SetBaseBuildPath set the base build path. Every so file generated from build will be stored into <baseBuildPath>/<name>/<name>.so
 func (e *Eek) SetBaseBuildPath(baseBuildPath string) {
 	e.baseBuildPath = baseBuildPath
 }
@@ -144,7 +165,12 @@ func (e *Eek) buildSimpleEvaluation() error {
 		if each.DefaultValue == nil {
 			variableLayout = fmt.Sprintf("%s\n%s %s", variableLayout, each.Name, each.Type)
 		} else {
-			variableLayout = fmt.Sprintf("%s\n%s %s = %v", variableLayout, each.Name, each.Type, each.DefaultValue)
+			switch each.DefaultValue.(type) {
+			case string:
+				variableLayout = fmt.Sprintf("%s\n%s %s = \"%v\"", variableLayout, each.Name, each.Type, each.DefaultValue)
+			default:
+				variableLayout = fmt.Sprintf("%s\n%s %s = %v", variableLayout, each.Name, each.Type, each.DefaultValue)
+			}
 		}
 	}
 	variableLayout = fmt.Sprintf(strings.TrimSpace(`var (%s)`), strings.TrimSpace(variableLayout))
@@ -196,18 +222,19 @@ func (e *Eek) writeToFile(code string) error {
 func (e *Eek) buildPluginFile() error {
 	op := fmt.Sprintf("cd %s && go build -buildmode=plugin -o %s", e.buildPath, filepath.Base(e.buildFilePath))
 
-	var err error
+	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin", "freebsd", "linux":
-		_, err = exec.Command("bash", "-c", op).Output()
+		cmd = exec.Command("bash", "-c", op)
 	case "windows":
-		_, err = exec.Command("cmd", "/C", op).Output()
+		cmd = exec.Command("cmd", "/C", op)
 	default:
-		err = fmt.Errorf("unsupported operating system")
+		return fmt.Errorf("unsupported operating system")
 	}
 
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %s", err.Error(), output)
 	}
 
 	return nil

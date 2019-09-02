@@ -55,3 +55,57 @@ func TestSpec(t *testing.T) {
 		})
 	})
 }
+
+func TestSpec(t *testing.T) {
+	Convey("Create Eek object with simple evaluation", t, func() {
+		obj := New()
+		obj.SetName("evaluation with 3rd party library")
+
+		obj.ImportPackage("fmt")
+		obj.ImportPackage("github.com/novalagung/gubrak")
+
+		obj.DefineVariable(Var{Name: "MessageWin", Type: "string", DefaultValue: "Congrats! You win the lottery!"})
+		obj.DefineVariable(Var{Name: "MessageLose", Type: "string", DefaultValue: "You lose"})
+		obj.DefineVariable(Var{Name: "YourLotteryCode", Type: "int"})
+		obj.DefineVariable(Var{Name: "RepeatUntil", Type: "int", DefaultValue: 5})
+
+		obj.PrepareEvalutation(`
+			generateRandomNumber := func() int {
+				return gubrak.RandomInt(0, 10)
+			}
+
+			i := 0
+			for i < RepeatUntil {
+				if generateRandomNumber() == YourLotteryCode {
+					return fmt.Sprintf("%s after %d tried", MessageWin, i + 1)
+				}
+
+				i++
+			}
+			
+			return MessageLose
+		`)
+
+		Convey("Build operation", func() {
+			err := obj.Build()
+			So(err, ShouldBeNil)
+
+			Convey("Test exec 1", func() {
+				output, err := obj.Evaluate(ExecVar{
+					"YourLotteryCode": 5,
+				})
+				So(err, ShouldBeNil)
+				_ = output
+			})
+
+			Convey("Test exec 2", func() {
+				output, err := obj.Evaluate(ExecVar{
+					"YourLotteryCode": 3,
+					"RepeatUntil":     10,
+				})
+				So(err, ShouldBeNil)
+				_ = output
+			})
+		})
+	})
+}
