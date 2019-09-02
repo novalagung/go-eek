@@ -114,26 +114,34 @@ func TestMathematicExpression(t *testing.T) {
 	Convey("Create Eek object with simple evaluation", t, func() {
 		obj := New("aritmethic expressions")
 		obj.DefineVariable(Var{Name: "N", Type: "int", DefaultValue: 34})
-		obj.PrepareEvalutation(`
-			IF := func(cond bool, ok, nok string) string {
-				if cond {
-					return ok
-				} else {
-					return nok
+		obj.DefineFunction(Func{
+			Name: "IF",
+			BodyFunction: `
+				func(cond bool, ok, nok string) string {
+					if cond {
+						return ok
+					} else {
+						return nok
+					}
 				}
-			}
-
-			OR := func(cond1, cond2 bool) bool {
-				return cond1 || cond2
-			}
-
-			NOT := func(cond bool) bool {
-				return !cond
-			}
-
-			message := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
+			`,
+		})
+		obj.DefineFunction(Func{
+			Name: "OR",
+			BodyFunction: `
+				func(cond1, cond2 bool) bool {
+					return cond1 || cond2
+				}
+			`,
+		})
+		obj.DefineFunction(Func{
+			Name:         "NOT",
+			BodyFunction: `func(cond bool) bool { return !cond }`,
+		})
+		obj.PrepareEvalutation(`
+			result := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
 			
-			return message
+			return result
 		`)
 
 		Convey("Build operation", func() {

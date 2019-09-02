@@ -23,14 +23,21 @@ const (
 // Eek is main type used on the evaluation
 type Eek struct {
 	name              string
-	variables         map[string]Var
-	packages          map[string]bool
+	functions         []Func
+	variables         []Var
+	packages          []string
 	evaluationType    eekType
 	operation         string
 	baseBuildPath     string
 	buildPath         string
 	buildFilePath     string
 	isBuildOnTempPath bool
+}
+
+// Func is reflect to a single typed reusable function
+type Func struct {
+	Name         string
+	BodyFunction string
 }
 
 // Var is reflect to a single typed variable with/without a default value
@@ -51,8 +58,9 @@ func New(args ...string) *Eek {
 		eek.SetName(args[0])
 	}
 
-	eek.variables = make(map[string]Var)
-	eek.packages = make(map[string]bool)
+	eek.functions = make([]Func, 0)
+	eek.variables = make([]Var, 0)
+	eek.packages = make([]string, 0)
 	eek.evaluationType = eekTypeSimple
 
 	eek.setDefaultBaseBuildPath()
@@ -91,15 +99,18 @@ func (e *Eek) SetBaseBuildPath(baseBuildPath string) {
 }
 
 // ImportPackage specify which packages will be imported
-func (e *Eek) ImportPackage(dependency ...string) {
-	for _, each := range dependency {
-		e.packages[each] = true
-	}
+func (e *Eek) ImportPackage(dependencies ...string) {
+	e.packages = append(e.packages, dependencies...)
 }
 
 // DefineVariable used to define variables that will be used in the operation
 func (e *Eek) DefineVariable(variable Var) {
-	e.variables[variable.Name] = variable
+	e.variables = append(e.variables, variable)
+}
+
+// DefineFunction used to define reusable functions that will be used in the operation
+func (e *Eek) DefineFunction(fun Func) {
+	e.functions = append(e.functions, fun)
 }
 
 // PrepareEvalutation prepare the layout of evaluation string
@@ -129,10 +140,13 @@ func (e *Eek) Build() error {
 }
 
 func (e *Eek) buildSimpleEvaluation() error {
+	// code base layout
 	layout := strings.TrimSpace(`
 		package main
 
 		$packages
+
+		$functions
 
 		$variables
 
@@ -141,8 +155,9 @@ func (e *Eek) buildSimpleEvaluation() error {
 		}
 	`)
 
+	// inject packages
 	packageLayout := ""
-	for each := range e.packages {
+	for _, each := range e.packages {
 		if each == "" {
 			continue
 		}
@@ -152,9 +167,22 @@ func (e *Eek) buildSimpleEvaluation() error {
 	packageLayout = fmt.Sprintf(strings.TrimSpace(`import (%s)`), strings.TrimSpace(packageLayout))
 	layout = strings.Replace(layout, "$packages", packageLayout, 1)
 
+	// inject functions
+	functionLayout := ""
+	for _, each := range e.functions {
+		bodyFunc := strings.TrimSpace(each.BodyFunction)
+		if each.Name == "" || bodyFunc == "" {
+			continue
+		}
+
+		functionLayout = fmt.Sprintf("%s\nvar %s = %s", functionLayout, each.Name, bodyFunc)
+	}
+	layout = strings.Replace(layout, "$functions", strings.TrimSpace(functionLayout), 1)
+
+	// inject variables
 	variableLayout := ""
 	for _, each := range e.variables {
-		if each.Name == "" {
+		if each.Name == "" || each.Type == "" {
 			continue
 		}
 
@@ -176,13 +204,16 @@ func (e *Eek) buildSimpleEvaluation() error {
 	variableLayout = fmt.Sprintf(strings.TrimSpace(`var (%s)`), strings.TrimSpace(variableLayout))
 	layout = strings.Replace(layout, "$variables", variableLayout, 1)
 
+	// inject operation
 	layout = strings.Replace(layout, "$operation", e.operation, 1)
 
+	// write code into temporary file
 	err := e.writeToFile(layout)
 	if err != nil {
 		return err
 	}
 
+	// build the code as go plugin file
 	err = e.buildPluginFile()
 	if err != nil {
 		return err
