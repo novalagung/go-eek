@@ -73,7 +73,7 @@ func (e *Eek) setDefaultBaseBuildPath() {
 	if basePath == "" {
 		basePath = "./"
 	} else {
-		isBuildOnTempPath = true // for later purpose
+		isBuildOnTempPath = true // for later on
 	}
 
 	defaultBaseBuildPath := filepath.Join(basePath, "go-eek-plugins")

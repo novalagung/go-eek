@@ -1,10 +1,10 @@
 # go-eek
 
-Blazingly fast and secure go evaluation library, created on top of [Go plugin API](https://golang.org/pkg/plugin/).
+Blazingly fast and secure go evaluation library, created on top of [Go `pkg/plugin` package](https://golang.org/pkg/plugin/).
 
-On go-eek, evaluation expression is encapsulated into single function, stored in a go file, and then the particular file will be build into a plugin file (`*.so` file). Next, for every evaluation call, it will happen by consuming the plugin file. This is why go-eek is insanely fast.
+On go-eek, the eval expression is encapsulated into a single function, and stored in a go file. The go file later on will be build into a plugin file (`*.so` file). And then next, for every evaluation call, it will happen in the plugin file. This is why go-eek is insanely fast.
 
-go-eek accept standar Go expression.
+go-eek accept standar Go syntax expression.
 
 ## Example
 
@@ -44,8 +44,7 @@ fmt.Println("with A = 12 and B = 12.4, the result will be", output2)
 #### More Complex Example
 
 ```go
-obj := eek.New()
-obj.SetName("evaluation with 3rd party library")
+obj := eek.New("evaluation with 3rd party library")
 
 obj.ImportPackage("fmt")
 obj.ImportPackage("github.com/novalagung/gubrak")
@@ -77,21 +76,10 @@ if err != nil {
     log.Fatal(err)
 }
 
-output, err := obj.Evaluate(eek.ExecVar{
-    "YourLotteryCode": 5,
-})
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println("output:", output)
-
-output, err = obj.Evaluate(eek.ExecVar{
+output, _ = obj.Evaluate(eek.ExecVar{
     "YourLotteryCode": 3,
     "RepeatUntil":     10,
 })
-if err != nil {
-    log.Fatal(err)
-}
 fmt.Println("output:", output)
 ```
 
