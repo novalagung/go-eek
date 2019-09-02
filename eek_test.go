@@ -109,3 +109,42 @@ func TestComplexEval(t *testing.T) {
 		})
 	})
 }
+
+func TestMathematicExpression(t *testing.T) {
+	Convey("Create Eek object with simple evaluation", t, func() {
+		obj := New("aritmethic expressions")
+		obj.DefineVariable(Var{Name: "N", Type: "int", DefaultValue: 34})
+		obj.PrepareEvalutation(`
+			IF := func(cond bool, ok, nok string) string {
+				if cond {
+					return ok
+				} else {
+					return nok
+				}
+			}
+
+			OR := func(cond1, cond2 bool) bool {
+				return cond1 || cond2
+			}
+
+			NOT := func(cond bool) bool {
+				return !cond
+			}
+
+			message := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
+			
+			return message
+		`)
+
+		Convey("Build operation", func() {
+			err := obj.Build()
+			So(err, ShouldBeNil)
+
+			Convey("Test exec 1", func() {
+				output, err := obj.Evaluate(ExecVar{"N": 76})
+				So(err, ShouldBeNil)
+				So(output, ShouldEqual, "good")
+			})
+		})
+	})
+}

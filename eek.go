@@ -203,6 +203,7 @@ func (e *Eek) writeToFile(code string) error {
 	name := reg.ReplaceAllString(e.name, "_")
 
 	e.buildPath = filepath.Join(e.baseBuildPath, name)
+	os.RemoveAll(e.buildPath)
 	err = os.MkdirAll(e.buildPath, os.ModePerm)
 	if err != nil {
 		return err

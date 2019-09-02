@@ -83,6 +83,42 @@ output, _ = obj.Evaluate(eek.ExecVar{
 fmt.Println("output:", output)
 ```
 
+#### Arithmethic expression Example
+
+```go
+obj := eek.New("aritmethic expressions")
+obj.DefineVariable(eek.Var{Name: "N", Type: "int", DefaultValue: 34})
+obj.PrepareEvalutation(`
+    IF := func(cond bool, ok, nok string) string {
+        if cond {
+            return ok
+        } else {
+            return nok
+        }
+    }
+
+    OR := func(cond1, cond2 bool) bool {
+        return cond1 || cond2
+    }
+
+    NOT := func(cond bool) bool {
+        return !cond
+    }
+
+    message := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
+    
+    return message
+`)
+
+err := obj.Build()
+if err != nil {
+    log.Fatal(err)
+}
+
+output, _ := obj.Evaluate(eek.ExecVar{"N": 76})
+fmt.Println(output)
+```
+
 More example available on the `*_test.go` file.
 
 ## Documentation
