@@ -1,6 +1,8 @@
 package eek
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -32,6 +34,8 @@ type Eek struct {
 	buildPath         string
 	buildFilePath     string
 	isBuildOnTempPath bool
+
+	UseCachedBuildForSameFormula bool
 }
 
 // Func is reflect to a single typed reusable function
@@ -62,6 +66,8 @@ func New(args ...string) *Eek {
 	eek.variables = make([]Var, 0)
 	eek.packages = make([]string, 0)
 	eek.evaluationType = eekTypeSimple
+
+	eek.UseCachedBuildForSameFormula = true
 
 	eek.setDefaultBaseBuildPath()
 
@@ -207,8 +213,14 @@ func (e *Eek) buildSimpleEvaluation() error {
 	// inject operation
 	layout = strings.Replace(layout, "$operation", e.operation, 1)
 
+	// prepare build path
+	err := e.prepareBuildPath(layout)
+	if err != nil {
+		return err
+	}
+
 	// write code into temporary file
-	err := e.writeToFile(layout)
+	err = e.writeToFile(layout)
 	if err != nil {
 		return err
 	}
@@ -226,16 +238,33 @@ func (e *Eek) buildComplexEvaluation() error {
 	return nil
 }
 
-func (e *Eek) writeToFile(code string) error {
+func (e *Eek) prepareBuildPath(str string) error {
 	reg, err := regexp.Compile("[^A-Za-z0-9]+")
 	if err != nil {
 		return err
 	}
 	name := reg.ReplaceAllString(e.name, "_")
-
 	e.buildPath = filepath.Join(e.baseBuildPath, name)
+
+	md5OfFormula, err := e.md5(str)
+	if err != nil {
+		return err
+	}
+	e.buildFilePath = filepath.Join(e.buildPath, fmt.Sprintf("%s_%s.so", name, md5OfFormula))
+
+	return nil
+}
+
+func (e *Eek) writeToFile(code string) error {
+	if e.UseCachedBuildForSameFormula {
+		if _, err := os.Stat(e.buildFilePath); err == nil {
+			fmt.Println("============is exists", e.buildPath)
+			return nil
+		}
+	}
+
 	os.RemoveAll(e.buildPath)
-	err = os.MkdirAll(e.buildPath, os.ModePerm)
+	err := os.MkdirAll(e.buildPath, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -245,8 +274,6 @@ func (e *Eek) writeToFile(code string) error {
 	if err != nil {
 		return err
 	}
-
-	e.buildFilePath = filepath.Join(e.buildPath, fmt.Sprintf("%s.so", name))
 
 	return nil
 }
@@ -315,4 +342,14 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 
 	result := lookedUpEvaluate.(func() interface{})()
 	return result, nil
+}
+
+func (*Eek) md5(str string) (string, error) {
+	hasher := md5.New()
+	_, err := hasher.Write([]byte(str))
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
