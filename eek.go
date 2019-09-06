@@ -33,7 +33,6 @@ type Eek struct {
 	baseBuildPath     string
 	buildPath         string
 	buildFilePath     string
-	isBuildOnTempPath bool
 
 	UseCachedBuildForSameFormula bool
 }
@@ -75,10 +74,22 @@ func New(args ...string) *Eek {
 }
 
 func (e *Eek) setDefaultBaseBuildPath() {
+	tmpFolderName:="go-eek-plugins"
+
 	basePath := ""
 	switch runtime.GOOS {
 	case "darwin", "freebsd", "linux":
+
 		basePath = os.Getenv("TMPDIR")
+		if basePath == "" {
+
+			tempFolder:="/tmp"
+			if tempBasePath :=filepath.Join(tempFolder,tmpFolderName); e.isPathExists(tempBasePath) {
+				basePath = tempFolder
+			} else if err:=os.MkdirAll(tempBasePath, os.ModePerm);err== nil{
+					basePath = tempFolder
+			}
+		}
 	case "windows":
 		basePath = os.Getenv("TEMP")
 	default:
@@ -86,11 +97,9 @@ func (e *Eek) setDefaultBaseBuildPath() {
 
 	if basePath == "" {
 		basePath = "./"
-	} else {
-		e.isBuildOnTempPath = true // for later on
 	}
 
-	defaultBaseBuildPath := filepath.Join(basePath, "go-eek-plugins")
+	defaultBaseBuildPath := filepath.Join(basePath, tmpFolderName)
 	e.SetBaseBuildPath(defaultBaseBuildPath)
 }
 
@@ -257,8 +266,7 @@ func (e *Eek) prepareBuildPath(str string) error {
 
 func (e *Eek) writeToFile(code string) error {
 	if e.UseCachedBuildForSameFormula {
-		if _, err := os.Stat(e.buildFilePath); err == nil {
-			fmt.Println("============is exists", e.buildPath)
+		if e.isPathExists(e.buildFilePath) {
 			return nil
 		}
 	}
@@ -301,6 +309,10 @@ func (e *Eek) buildPluginFile() error {
 
 // Evaluate execute using particular data
 func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
+	if !e.isPathExists(e.buildFilePath) {
+		return nil, fmt.Errorf("build file is not found. please try to rebuild the formula")
+	}
+
 	p, err := plugin.Open(e.buildFilePath)
 	if err != nil {
 		return nil, err
@@ -352,4 +364,12 @@ func (*Eek) md5(str string) (string, error) {
 	}
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+func (e*Eek)isPathExists(str string) bool{
+	if _, err := os.Stat(str); err == nil {
+		return true
+	} else {
+		return false
+	}
 }
