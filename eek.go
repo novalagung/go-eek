@@ -24,15 +24,15 @@ const (
 
 // Eek is main type used on the evaluation
 type Eek struct {
-	name              string
-	functions         []Func
-	variables         []Var
-	packages          []string
-	evaluationType    eekType
-	operation         string
-	baseBuildPath     string
-	buildPath         string
-	buildFilePath     string
+	name           string
+	functions      []Func
+	variables      []Var
+	packages       []string
+	evaluationType eekType
+	operation      string
+	baseBuildPath  string
+	buildPath      string
+	buildFilePath  string
 
 	UseCachedBuildForSameFormula bool
 }
@@ -74,20 +74,20 @@ func New(args ...string) *Eek {
 }
 
 func (e *Eek) setDefaultBaseBuildPath() {
-	tmpFolderName:="go-eek-plugins"
-
 	basePath := ""
+	tmpFolderName := "go-eek-plugins"
+
 	switch runtime.GOOS {
 	case "darwin", "freebsd", "linux":
 
 		basePath = os.Getenv("TMPDIR")
 		if basePath == "" {
 
-			tempFolder:="/tmp"
-			if tempBasePath :=filepath.Join(tempFolder,tmpFolderName); e.isPathExists(tempBasePath) {
+			tempFolder := "/tmp"
+			if tempBasePath := filepath.Join(tempFolder, tmpFolderName); e.isPathExists(tempBasePath) {
 				basePath = tempFolder
-			} else if err:=os.MkdirAll(tempBasePath, os.ModePerm);err== nil{
-					basePath = tempFolder
+			} else if err := os.MkdirAll(tempBasePath, os.ModePerm); err == nil {
+				basePath = tempFolder
 			}
 		}
 	case "windows":
@@ -366,7 +366,7 @@ func (*Eek) md5(str string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func (e*Eek)isPathExists(str string) bool{
+func (e *Eek) isPathExists(str string) bool {
 	if _, err := os.Stat(str); err == nil {
 		return true
 	} else {
