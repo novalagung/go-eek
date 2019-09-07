@@ -285,7 +285,6 @@ func (e *Eek) writeToFileThenBuild(code string) error {
 	}
 
 	op := fmt.Sprintf("cd %s && %s build -buildmode=plugin -o %s", e.buildPath, e.goBinaryPath, filepath.Base(e.buildFilePath))
-	fmt.Println("====== OPERATION", op)
 
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
