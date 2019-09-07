@@ -1,11 +1,6 @@
 language: go
 os:
   - linux
-go:
-  - go1.8
-  - go1.9
-  - go1.10
-  - go1.11
 go_import_path: github.com/novalagung/go-eek
 before_install:
   - go get github.com/mattn/goveralls
