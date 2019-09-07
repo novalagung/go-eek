@@ -148,17 +148,30 @@ func (e *Eek) Build() error {
 		return fmt.Errorf("evaluation cannot be empty")
 	}
 
+	var code string
+	var err error
+
 	switch e.evaluationType {
 	case eekTypeSimple:
-		return e.buildSimpleEvaluation()
+		code, err = e.buildSimpleEvaluation()
 	case eekTypeComplex:
-		return e.buildComplexEvaluation()
+		code, err = e.buildComplexEvaluation()
 	default:
 		return nil
 	}
+	if err != nil {
+		return err
+	}
+
+	// write code into temporary file, then build the code as go plugin file
+	if err := e.writeToFileThenBuild(code); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (e *Eek) buildSimpleEvaluation() error {
+func (e *Eek) buildSimpleEvaluation() (string, error) {
 	// code base code
 	code := strings.TrimSpace(`
 		package main
@@ -206,7 +219,7 @@ func (e *Eek) buildSimpleEvaluation() error {
 		}
 
 		if prefix := strings.ToUpper(string(each.Name[0])); prefix != string(each.Name[0]) {
-			return fmt.Errorf("defined variable must be exported. %s must be %s%s", each.Name, prefix, each.Name[1:])
+			return "", fmt.Errorf("defined variable must be exported. %s must be %s%s", each.Name, prefix, each.Name[1:])
 		}
 
 		if each.DefaultValue == nil {
@@ -226,18 +239,11 @@ func (e *Eek) buildSimpleEvaluation() error {
 	// inject operation
 	code = strings.Replace(code, "$operation", e.operation, 1)
 
-	// write code into temporary file
-	// then build the code as go plugin file
-	err := e.writeToFileThenBuild(code)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return code, nil
 }
 
-func (e *Eek) buildComplexEvaluation() error {
-	return nil
+func (e *Eek) buildComplexEvaluation() (string, error) {
+	return "", fmt.Errorf("currently complex evaluation is still not supported")
 }
 
 func (e *Eek) writeToFileThenBuild(code string) error {
@@ -301,6 +307,7 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 		}
 
 		(func() {
+			// recover panic error from reflect operation
 			defer func() {
 				if recovered := recover(); recovered != nil {
 					recoveredInString := fmt.Sprintf("%v", recovered)
@@ -315,6 +322,7 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 				}
 			}()
 
+			// line underneath has a protential to generate a panic error
 			// reflect.Set: value of type int is not assignable to type float64
 			reflect.ValueOf(lookedUpVar).Elem().Set(reflect.ValueOf(varValue))
 		})()
