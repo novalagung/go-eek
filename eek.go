@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -29,6 +30,7 @@ var (
 // Eek is main type used on the evaluation
 type Eek struct {
 	name              string
+	goBinaryPath      string
 	functions         []Func
 	variables         []Var
 	packages          []string
@@ -72,9 +74,24 @@ func New(args ...string) *Eek {
 
 	eek.UseCachedBuildForSameFormula = true
 
+	eek.setDefaultGoBinaryPath()
 	eek.setDefaultBaseBuildPath()
 
 	return eek
+}
+
+func (e *Eek) setDefaultGoBinaryPath() {
+	if root := build.Default.GOROOT; root != "" {
+		e.goBinaryPath = filepath.Join(root, "bin", "go")
+		return
+	}
+
+	if root := os.Getenv("GOROOT"); root != "" {
+		e.goBinaryPath = filepath.Join(root, "bin", "go")
+		return
+	}
+
+	e.goBinaryPath = "go"
 }
 
 func (e *Eek) setDefaultBaseBuildPath() {
@@ -267,7 +284,7 @@ func (e *Eek) writeToFileThenBuild(code string) error {
 		return err
 	}
 
-	op := fmt.Sprintf("cd %s && go build -buildmode=plugin -o %s", e.buildPath, filepath.Base(e.buildFilePath))
+	op := fmt.Sprintf("cd %s && %s build -buildmode=plugin -o %s", e.buildPath, e.goBinaryPath, filepath.Base(e.buildFilePath))
 
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
