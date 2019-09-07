@@ -139,7 +139,7 @@ func TestMathematicExpression(t *testing.T) {
 			BodyFunction: `func(cond bool) bool { return !cond }`,
 		})
 		obj.PrepareEvaluation(`
-			result := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
+			result := IF (N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
 			
 			return result
 		`)

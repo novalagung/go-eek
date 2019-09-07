@@ -22,6 +22,10 @@ const (
 	eekTypeComplex
 )
 
+var (
+	regexFileName = regexp.MustCompile("[^A-Za-z0-9]+")
+)
+
 // Eek is main type used on the evaluation
 type Eek struct {
 	name           string
@@ -155,8 +159,8 @@ func (e *Eek) Build() error {
 }
 
 func (e *Eek) buildSimpleEvaluation() error {
-	// code base layout
-	layout := strings.TrimSpace(`
+	// code base code
+	code := strings.TrimSpace(`
 		package main
 
 		$packages
@@ -180,7 +184,7 @@ func (e *Eek) buildSimpleEvaluation() error {
 		packageLayout = fmt.Sprintf("%s\n\"%s\"", packageLayout, each)
 	}
 	packageLayout = fmt.Sprintf(strings.TrimSpace(`import (%s)`), strings.TrimSpace(packageLayout))
-	layout = strings.Replace(layout, "$packages", packageLayout, 1)
+	code = strings.Replace(code, "$packages", packageLayout, 1)
 
 	// inject functions
 	functionLayout := ""
@@ -192,7 +196,7 @@ func (e *Eek) buildSimpleEvaluation() error {
 
 		functionLayout = fmt.Sprintf("%s\nvar %s = %s", functionLayout, each.Name, bodyFunc)
 	}
-	layout = strings.Replace(layout, "$functions", strings.TrimSpace(functionLayout), 1)
+	code = strings.Replace(code, "$functions", strings.TrimSpace(functionLayout), 1)
 
 	// inject variables
 	variableLayout := ""
@@ -217,25 +221,14 @@ func (e *Eek) buildSimpleEvaluation() error {
 		}
 	}
 	variableLayout = fmt.Sprintf(strings.TrimSpace(`var (%s)`), strings.TrimSpace(variableLayout))
-	layout = strings.Replace(layout, "$variables", variableLayout, 1)
+	code = strings.Replace(code, "$variables", variableLayout, 1)
 
 	// inject operation
-	layout = strings.Replace(layout, "$operation", e.operation, 1)
-
-	// prepare build path
-	err := e.prepareBuildPath(layout)
-	if err != nil {
-		return err
-	}
+	code = strings.Replace(code, "$operation", e.operation, 1)
 
 	// write code into temporary file
-	err = e.writeToFile(layout)
-	if err != nil {
-		return err
-	}
-
-	// build the code as go plugin file
-	err = e.buildPluginFile()
+	// then build the code as go plugin file
+	err := e.writeToFileThenBuild(code)
 	if err != nil {
 		return err
 	}
@@ -247,24 +240,11 @@ func (e *Eek) buildComplexEvaluation() error {
 	return nil
 }
 
-func (e *Eek) prepareBuildPath(str string) error {
-	reg, err := regexp.Compile("[^A-Za-z0-9]+")
-	if err != nil {
-		return err
-	}
-	name := reg.ReplaceAllString(e.name, "_")
+func (e *Eek) writeToFileThenBuild(code string) error {
+	name := regexFileName.ReplaceAllString(e.name, "_")
 	e.buildPath = filepath.Join(e.baseBuildPath, name)
+	e.buildFilePath = filepath.Join(e.buildPath, fmt.Sprintf("%s_%s.so", name, e.md5(code)))
 
-	md5OfFormula, err := e.md5(str)
-	if err != nil {
-		return err
-	}
-	e.buildFilePath = filepath.Join(e.buildPath, fmt.Sprintf("%s_%s.so", name, md5OfFormula))
-
-	return nil
-}
-
-func (e *Eek) writeToFile(code string) error {
 	if e.UseCachedBuildForSameFormula {
 		if e.isPathExists(e.buildFilePath) {
 			return nil
@@ -283,10 +263,6 @@ func (e *Eek) writeToFile(code string) error {
 		return err
 	}
 
-	return nil
-}
-
-func (e *Eek) buildPluginFile() error {
 	op := fmt.Sprintf("cd %s && go build -buildmode=plugin -o %s", e.buildPath, filepath.Base(e.buildFilePath))
 
 	var cmd *exec.Cmd
@@ -356,20 +332,20 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 	return result, nil
 }
 
-func (*Eek) md5(str string) (string, error) {
+func (*Eek) md5(str string) string {
 	hasher := md5.New()
 	_, err := hasher.Write([]byte(str))
 	if err != nil {
-		return "", err
+		return ""
 	}
 
-	return hex.EncodeToString(hasher.Sum(nil)), nil
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func (e *Eek) isPathExists(str string) bool {
 	if _, err := os.Stat(str); err == nil {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
