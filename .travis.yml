@@ -6,9 +6,11 @@ go:
   - go1.13
 go_import_path: github.com/novalagung/go-eek
 before_install:
+  - cd $GOPATH/src/github.com/novalagung/go-eek && rm -rf go.* && rm -rf vendor
+  - ls
   - go get github.com/mattn/goveralls
   - go get github.com/novalagung/gubrak
-  - cd $GOPATH/src/github.com/novalagung/go-eek && rm -rf go.*
+  - go get github.com/smartystreets/goconvey
 script:
   - go test -cover -race -v ./...
   - $GOPATH/bin/goveralls -service=travis-ci
