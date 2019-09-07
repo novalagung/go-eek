@@ -8,6 +8,7 @@ go_import_path: github.com/novalagung/go-eek
 before_install:
   - go get github.com/mattn/goveralls
   - go get github.com/novalagung/gubrak
+  - cd $GOPATH/src/github.com/novalagung/go-eek && rm -rf go.*
 script:
   - go test -cover -race -v ./...
   - $GOPATH/bin/goveralls -service=travis-ci
