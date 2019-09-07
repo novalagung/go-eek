@@ -6,8 +6,9 @@ go:
   - go1.13
 go_import_path: github.com/novalagung/go-eek
 before_install:
-  - cd $GOPATH/src/github.com/novalagung/go-eek && rm -rf go.* && rm -rf vendor
-  - ls
+  - which go
+  - rm -rf go.*
+  - rm -rf vendor
   - go get github.com/mattn/goveralls
   - go get github.com/novalagung/gubrak
   - go get github.com/smartystreets/goconvey
