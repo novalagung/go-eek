@@ -60,6 +60,7 @@ func TestComplexEval(t *testing.T) {
 	Convey("Create Eek object with simple evaluation", t, func() {
 		obj := New()
 		obj.SetName("evaluation with 3rd party library")
+		obj.SetBaseBuildPath(".")
 
 		obj.ImportPackage("fmt")
 		obj.ImportPackage("github.com/novalagung/gubrak")
@@ -154,5 +155,39 @@ func TestMathematicExpression(t *testing.T) {
 				So(output, ShouldEqual, "good")
 			})
 		})
+	})
+}
+
+func TestValidationError(t *testing.T) {
+	Convey("Error name is mandatory", t, func() {
+		err := New().Build()
+		So(err, ShouldBeError)
+		So(err.Error(), ShouldEqual, "name is mandatory")
+	})
+
+	Convey("Error evaluationType is invalid", t, func() {
+		obj := New("test")
+		obj.evaluationType = 3
+		err := obj.Build()
+		So(err, ShouldBeError)
+		So(err.Error(), ShouldEqual, "evaluationType is invalid")
+	})
+
+	Convey("Error evaluation formula cannot be empty", t, func() {
+		obj := New("test")
+		err := obj.Build()
+		So(err, ShouldBeError)
+		So(err.Error(), ShouldEqual, "evaluation formula cannot be empty")
+	})
+}
+
+func TestComplexEvaluation(t *testing.T) {
+	Convey("Complex evaluation", t, func() {
+		obj := New("test")
+		obj.PrepareEvaluation("return 1 + 2")
+		obj.evaluationType = eekTypeComplex
+		err := obj.Build()
+		So(err, ShouldBeError)
+		So(err.Error(), ShouldEqual, "currently complex evaluation is still not supported")
 	})
 }

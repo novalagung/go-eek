@@ -28,15 +28,15 @@ var (
 
 // Eek is main type used on the evaluation
 type Eek struct {
-	name           string
-	functions      []Func
-	variables      []Var
-	packages       []string
-	evaluationType eekType
-	operation      string
-	baseBuildPath  string
-	buildPath      string
-	buildFilePath  string
+	name              string
+	functions         []Func
+	variables         []Var
+	packages          []string
+	evaluationType    eekType
+	evaluationFormula string
+	baseBuildPath     string
+	buildPath         string
+	buildFilePath     string
 
 	UseCachedBuildForSameFormula bool
 }
@@ -122,20 +122,20 @@ func (e *Eek) ImportPackage(dependencies ...string) {
 	e.packages = append(e.packages, dependencies...)
 }
 
-// DefineVariable used to define variables that will be used in the operation
+// DefineVariable used to define variables that will be used in the evaluation formula
 func (e *Eek) DefineVariable(variable Var) {
 	e.variables = append(e.variables, variable)
 }
 
-// DefineFunction used to define reusable functions that will be used in the operation
+// DefineFunction used to define reusable functions that will be used in the evaluation formula
 func (e *Eek) DefineFunction(fun Func) {
 	e.functions = append(e.functions, fun)
 }
 
 // PrepareEvaluation prepare the layout of evaluation string
-func (e *Eek) PrepareEvaluation(operation string) {
+func (e *Eek) PrepareEvaluation(evaluationFormula string) {
 	e.evaluationType = eekTypeSimple
-	e.operation = strings.TrimSpace(operation)
+	e.evaluationFormula = strings.TrimSpace(evaluationFormula)
 }
 
 // Build build the evaluation
@@ -144,8 +144,8 @@ func (e *Eek) Build() error {
 		return fmt.Errorf("name is mandatory")
 	} else if e.evaluationType != eekTypeSimple && e.evaluationType != eekTypeComplex {
 		return fmt.Errorf("evaluationType is invalid")
-	} else if e.operation == "" {
-		return fmt.Errorf("evaluation cannot be empty")
+	} else if e.evaluationFormula == "" {
+		return fmt.Errorf("evaluation formula cannot be empty")
 	}
 
 	var code string
@@ -156,8 +156,6 @@ func (e *Eek) Build() error {
 		code, err = e.buildSimpleEvaluation()
 	case eekTypeComplex:
 		code, err = e.buildComplexEvaluation()
-	default:
-		return nil
 	}
 	if err != nil {
 		return err
@@ -183,7 +181,7 @@ func (e *Eek) buildSimpleEvaluation() (string, error) {
 		$variables
 
 		func Evaluate() interface{} {
-			$operation
+			$evaluationFormula
 		}
 	`)
 
@@ -236,8 +234,8 @@ func (e *Eek) buildSimpleEvaluation() (string, error) {
 	variableLayout = fmt.Sprintf(strings.TrimSpace(`var (%s)`), strings.TrimSpace(variableLayout))
 	code = strings.Replace(code, "$variables", variableLayout, 1)
 
-	// inject operation
-	code = strings.Replace(code, "$operation", e.operation, 1)
+	// inject evaluationFormula
+	code = strings.Replace(code, "$evaluationFormula", e.evaluationFormula, 1)
 
 	return code, nil
 }
@@ -295,6 +293,7 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 		return nil, fmt.Errorf("build file is not found. please try to rebuild the formula")
 	}
 
+	// open the build file path
 	p, err := plugin.Open(e.buildFilePath)
 	if err != nil {
 		return nil, err
@@ -307,7 +306,7 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 		}
 
 		(func() {
-			// recover panic error from reflect operation
+			// recover panic error from reflect evaluationFormula
 			defer func() {
 				if recovered := recover(); recovered != nil {
 					recoveredInString := fmt.Sprintf("%v", recovered)
@@ -342,11 +341,7 @@ func (e *Eek) Evaluate(data ExecVar) (interface{}, error) {
 
 func (*Eek) md5(str string) string {
 	hasher := md5.New()
-	_, err := hasher.Write([]byte(str))
-	if err != nil {
-		return ""
-	}
-
+	hasher.Write([]byte(str))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
