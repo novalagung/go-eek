@@ -2,6 +2,10 @@
 
 Blazingly fast and safe go evaluation library, created on top of [Go `pkg/plugin` package](https://golang.org/pkg/plugin/).
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/novalagung/go-eek?nocache=1)](https://goreportcard.com/report/github.com/novalagung/go-eek?nocache=1)
+[![Build Status](https://travis-ci.org/novalagung/go-eek.svg?branch=master)](https://travis-ci.org/novalagung/go-eek)
+[![Coverage Status](https://coveralls.io/repos/github/novalagung/go-eek/badge.svg?branch=master)](https://coveralls.io/github/novalagung/go-eek?branch=master)
+
 On go-eek, the eval expression is encapsulated into a single function, and stored in a go file. The go file later on will be build into a plugin file (`*.so` file). And then next, for every evaluation call, it will happen in the plugin file. This is why go-eek is insanely fast.
 
 go-eek accept standar Go syntax expression.
