@@ -18,7 +18,7 @@ go-eek accept standar Go syntax expression.
 import . "github.com/novalagung/go-eek"
 
 // create new eek object and name it
-obj := NewEek()
+obj := New()
 obj.SetName("simple operation")
 
 // define variables (and default value of particular variable if available)
@@ -27,8 +27,8 @@ obj.DefineVariable(Var{Name: "VarB", Type: "float64", DefaultValue: 10.5})
 
 // specify the evaluation expression in go standard syntax
 obj.PrepareEvaluation(`
-    VarACasted := float64(VarA)
-    VarC := VarACasted + VarB
+    castedVarA := float64(VarA)
+    VarC := castedVarA + VarB
     return VarC
 `)
 
@@ -39,10 +39,10 @@ if err != nil {
 }
 
 // evaluate!
-output1, _ := obj.Evaluate(ExecVar{ "A": 9 })
-fmt.Println("with A = 9, the result will be", output1)
-output2, _ := obj.Evaluate(ExecVar{ "A": 12, "B": 12.4 })
-fmt.Println("with A = 12 and B = 12.4, the result will be", output2)
+output1, _ := obj.Evaluate(ExecVar{ "VarA": 9 })
+fmt.Println("with VarA = 9, the result will be", output1)
+output2, _ := obj.Evaluate(ExecVar{ "VarA": 12, "VarB": 12.4 })
+fmt.Println("with VarA = 12 and VarB = 12.4, the result will be", output2)
 ```
 
 #### More Complex Example
@@ -53,10 +53,10 @@ obj := eek.New("evaluation with 3rd party library")
 obj.ImportPackage("fmt")
 obj.ImportPackage("github.com/novalagung/gubrak")
 
-obj.DefineVariable(eek.Var{Name: "MessageWin", Type: "string", DefaultValue: "Congrats! You win the lottery!"})
-obj.DefineVariable(eek.Var{Name: "MessageLose", Type: "string", DefaultValue: "You lose"})
-obj.DefineVariable(eek.Var{Name: "YourLotteryCode", Type: "int"})
-obj.DefineVariable(eek.Var{Name: "RepeatUntil", Type: "int", DefaultValue: 5})
+obj.DefineVariable(eek.Var{Name: "VarMessageWin", Type: "string", DefaultValue: "Congrats! You win the lottery!"})
+obj.DefineVariable(eek.Var{Name: "VarMessageLose", Type: "string", DefaultValue: "You lose"})
+obj.DefineVariable(eek.Var{Name: "VarYourLotteryCode", Type: "int"})
+obj.DefineVariable(eek.Var{Name: "VarRepeatUntil", Type: "int", DefaultValue: 5})
 
 obj.PrepareEvaluation(`
     generateRandomNumber := func() int {
@@ -64,15 +64,15 @@ obj.PrepareEvaluation(`
     }
 
     i := 0
-    for i < RepeatUntil {
-        if generateRandomNumber() == YourLotteryCode {
-            return fmt.Sprintf("%s after %d tried", MessageWin, i + 1)
+    for i < VarRepeatUntil {
+        if generateRandomNumber() == VarYourLotteryCode {
+            return fmt.Sprintf("%s after %d tried", VarMessageWin, i + 1)
         }
 
         i++
     }
     
-    return MessageLose
+    return VarMessageLose
 `)
 
 err := obj.Build()
@@ -81,8 +81,8 @@ if err != nil {
 }
 
 output, _ = obj.Evaluate(eek.ExecVar{
-    "YourLotteryCode": 3,
-    "RepeatUntil":     10,
+    "VarYourLotteryCode": 3,
+    "VarRepeatUntil":     10,
 })
 fmt.Println("output:", output)
 ```
@@ -91,7 +91,7 @@ fmt.Println("output:", output)
 
 ```go
 obj := New("aritmethic expressions")
-obj.DefineVariable(eek.Var{Name: "N", Type: "int"})
+obj.DefineVariable(eek.Var{Name: "VarN", Type: "int"})
 obj.DefineFunction(eek.Func{
     Name: "IF",
     BodyFunction: `
@@ -117,7 +117,7 @@ obj.DefineFunction(eek.Func{
     BodyFunction: `func(cond bool) bool { return !cond }`,
 })
 obj.PrepareEvaluation(`
-    result := IF(N>20,IF(OR(N>40,N==40),IF(N>60,IF(NOT(N>80),"good",IF(N==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
+    result := IF(VarN>20,IF(OR(VarN>40,N==40),IF(VarN>60,IF(NOT(VarN>80),"good",IF(VarN==90,"perfect","terrific")),"ok"),"ok, but still bad"),"bad")
     
     return result
 `)
@@ -127,7 +127,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-output, _ := obj.Evaluate(eek.ExecVar{"N": 76})
+output, _ := obj.Evaluate(eek.ExecVar{"VarN": 76})
 fmt.Println(output)
 ```
 
